@@ -1,4 +1,5 @@
 import {EditorView, basicSetup} from "codemirror";
+import {Decoration, DecorationSet} from "@codemirror/view"
 import JZZ from "jzz";
 import ABC from "jazz-abc";
 import SEL from "jzz-gui-select";
@@ -20,6 +21,12 @@ piano.connect(widget);
 widget.connect(piano);
 midi_in.select();
 midi_out.select();
+
+const abcTheme = EditorView.baseTheme({
+  ".cm-comment": { textDecoration: "underline 3px red" }
+});
+
+const commentMark = Decoration.mark({class: "cm-comment"});
 
 let watcher = EditorView.updateListener.of((update) => {
   if (update.docChanged) {
