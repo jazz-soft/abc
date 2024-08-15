@@ -1,5 +1,7 @@
 import {EditorView, basicSetup} from "codemirror";
-import {Decoration, DecorationSet} from "@codemirror/view"
+import {Decoration, ViewPlugin} from "@codemirror/view";
+import {StateField} from "@codemirror/state";
+
 import JZZ from "jzz";
 import ABC from "jazz-abc";
 import SEL from "jzz-gui-select";
@@ -22,20 +24,32 @@ widget.connect(piano);
 midi_in.select();
 midi_out.select();
 
-const abcTheme = EditorView.baseTheme({
+const theme = EditorView.baseTheme({
   ".cm-comment": { textDecoration: "underline 3px red" }
 });
 
 const commentMark = Decoration.mark({class: "cm-comment"});
 
-let watcher = EditorView.updateListener.of((update) => {
+const watcher = EditorView.updateListener.of((update) => {
   if (update.docChanged) {
-    //console.log('!');
   }
 });
 
+const decorator = StateField.define({
+  create() {
+    return Decoration.set([]);
+  },
+  update(val, tr) {
+    if (!tr.docChanged) return val;
+    return Decoration.set([
+      commentMark.range(0, 1)
+    ]);
+  },
+  provide: (x) => EditorView.decorations.from(x)
+});
+
 let editor = new EditorView({
-  extensions: [basicSetup, watcher],
+  extensions: [basicSetup, theme, watcher, decorator],
   parent: document.body
 })
 
