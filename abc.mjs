@@ -1,6 +1,7 @@
 import {EditorView, basicSetup} from "codemirror";
 import {Decoration, ViewPlugin} from "@codemirror/view";
 import {StateField, StateEffect} from "@codemirror/state";
+import {CompletionContext} from "@codemirror/autocomplete";
 import JZZ from "jzz";
 import ABC from "jazz-abc";
 import SEL from "jzz-gui-select";
