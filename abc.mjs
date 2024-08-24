@@ -1,7 +1,7 @@
 import {EditorView, basicSetup} from "codemirror";
 import {Decoration, ViewPlugin} from "@codemirror/view";
 import {StateField, StateEffect} from "@codemirror/state";
-import {CompletionContext} from "@codemirror/autocomplete";
+import {autocompletion} from "@codemirror/autocomplete";
 import JZZ from "jzz";
 import ABC from "jazz-abc";
 import SEL from "jzz-gui-select";
@@ -73,8 +73,18 @@ const decorator = StateField.define({
   provide: (x) => EditorView.decorations.from(x)
 });
 
+const autocomplete = autocompletion({ override: [(context) => {
+  if (context.state.doc.lineAt(context.state.selection.ranges[0].to).number == 1) {
+    var abc = context.matchBefore(/^%\w*/);
+    if (abc) return { from: abc.from, options: [{ label: '%abc', detail: '(ABC file header)' }]};
+    abc = context.matchBefore(/^%abc-.*/);
+    if (abc) return { from: abc.from, options: [{ label: '%abc-2.2' }]};
+  }
+  return null;
+}]});
+
 let editor = new EditorView({
-  extensions: [basicSetup, theme, parser, decorator, watcher],
+  extensions: [basicSetup, theme, parser, decorator, watcher, autocomplete],
   parent: document.body
 })
 
