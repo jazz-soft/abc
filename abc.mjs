@@ -73,13 +73,23 @@ const decorator = StateField.define({
   provide: (x) => EditorView.decorations.from(x)
 });
 
-const autocomplete = autocompletion({ override: [(context) => {
+const pseudo = [];
+for (var x of ABC.Parser.pseudo()) {
+  var opt = { label: '%%' + x.name, apply: '%%' + x.name + ' ' };
+  if (x.det) opt.detail = '(' + x.det + ')';
+  pseudo.push(opt);
+}
+
+const autocomplete = autocompletion({ filterStrict: true, override: [(context) => {
+  var match;
   if (context.state.doc.lineAt(context.state.selection.ranges[0].to).number == 1) {
-    var abc = context.matchBefore(/^%\w*/);
-    if (abc) return { from: abc.from, options: [{ label: '%abc', detail: '(ABC file header)' }]};
-    abc = context.matchBefore(/^%abc-.*/);
-    if (abc) return { from: abc.from, options: [{ label: '%abc-2.2' }]};
+    match = context.matchBefore(/^%\w*/);
+    if (match) return { from: match.from, options: [{ label: '%abc', detail: '(ABC file header)' }] };
+    match = context.matchBefore(/^%abc-.*/);
+    if (match) return { from: match.from, options: [{ label: '%abc-2.2' }] };
   }
+  match = context.matchBefore(/^%%\S*/);
+  if (match) return { from: match.from, options: pseudo };
   return null;
 }]});
 
