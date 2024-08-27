@@ -1,5 +1,5 @@
 import {EditorView, basicSetup} from "codemirror";
-import {Decoration, ViewPlugin} from "@codemirror/view";
+import {Decoration, hoverTooltip} from "@codemirror/view";
 import {StateField, StateEffect} from "@codemirror/state";
 import {autocompletion} from "@codemirror/autocomplete";
 import JZZ from "jzz";
@@ -80,6 +80,10 @@ for (var x of ABC.Parser.pseudo()) {
   pseudo.push(opt);
 }
 
+const details = { '%:': 'ABC file header' };
+const fields = ABC.Parser.fields();
+for (var x of fields) if (x.det) details[x.name + ':'] = x.det;
+
 const autocomplete = autocompletion({ filterStrict: true, override: [(context) => {
   var match;
   if (context.state.doc.lineAt(context.state.selection.ranges[0].to).number == 1) {
@@ -93,8 +97,28 @@ const autocomplete = autocompletion({ filterStrict: true, override: [(context) =
   return null;
 }]});
 
+const tooltip = hoverTooltip((view, pos, side) => {
+  const data = view.state.field(parser).tokens;
+  const line = view.state.doc.lineAt(pos);
+  const ln = view.state.field(parser).tokens[line.number - 1];
+  if (!ln || !ln.length) return null;
+  var t = ln[0].t;
+  var txt = details[t];
+  if (!txt) return null;
+  return {
+    pos: line.from,
+    end: line.to,
+    above: true,
+    create(view) {
+      let dom = document.createElement("div")
+      dom.textContent = txt;
+      return {dom}
+    }
+  }
+})
+
 let editor = new EditorView({
-  extensions: [basicSetup, theme, parser, decorator, watcher, autocomplete],
+  extensions: [basicSetup, theme, parser, decorator, watcher, autocomplete, tooltip],
   parent: document.body
 })
 
