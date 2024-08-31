@@ -9,11 +9,11 @@
     "@rollup/plugin-commonjs": "^26.0.1",
     "@rollup/plugin-node-resolve": "^15.2.3",
     "codemirror": "^6.0.1",
-    "jazz-abc": "^0.0.5",
+    "jazz-abc": "^0.0.6",
     "jzz": "^1.8.5",
     "jzz-gui-select": "^1.1.5",
     "jzz-input-kbd": "^1.3.3",
     "jzz-synth-tiny": "^1.4.1",
-    "rollup": "^4.21.1"
+    "rollup": "^4.21.2"
   }
 }

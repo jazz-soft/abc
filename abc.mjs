@@ -25,14 +25,17 @@ midi_in.select();
 midi_out.select();
 
 const theme = EditorView.baseTheme({
+  ".cm-ttip": { fontFamily: "sans-serif", fontSize: "x-small", padding: ".2em" },
   ".cm-field": { color: "blue", fontWeight: "bold" },
   ".cm-pseudo": { color: "darkturquoise", fontWeight: "bold" },
-  ".cm-comment": { color: "green", fontStyle: "italic" }
+  ".cm-comment": { color: "green", fontStyle: "italic" },
+  ".cm-free": { color: "gray" }
 });
 
 const fieldMark = Decoration.mark({class: "cm-field"});
 const pseudoMark = Decoration.mark({class: "cm-pseudo"});
 const commentMark = Decoration.mark({class: "cm-comment"});
+const freeMark = Decoration.mark({class: "cm-free"});
 
 const watcher = EditorView.updateListener.of((update) => {
   if (update.docChanged) {
@@ -54,6 +57,7 @@ function decorate(a, d, t) {
   if (t.t[1] == ':') mark = fieldMark;
   else if (t.t == '%') mark = commentMark;
   else if (t.t == '%%') mark = pseudoMark;
+  else if (t.t == '??') mark = freeMark;
   if (mark) {
     var from = d.line(t.l + 1).from + t.c;
     var to = from + t.x.length;
@@ -86,19 +90,22 @@ for (var x of fields) if (x.det) details[x.name + ':'] = x.det;
 
 const autocomplete = autocompletion({ filterStrict: true, override: [(context) => {
   var match;
-  if (context.state.doc.lineAt(context.state.selection.ranges[0].to).number == 1) {
-    match = context.matchBefore(/^%\w*/);
-    if (match) return { from: match.from, options: [{ label: '%abc', detail: '(ABC file header)' }] };
-    match = context.matchBefore(/^%abc-.*/);
-    if (match) return { from: match.from, options: [{ label: '%abc-2.2' }] };
+  var sel = context.state.selection.ranges[0];
+  var line = context.state.doc.lineAt(sel.to);
+  if (sel.to == line.to) {
+    if (line.number == 1) {
+      match = context.matchBefore(/^%\w*/);
+      if (match) return { from: match.from, options: [{ label: '%abc', detail: '(ABC file header)' }] };
+      match = context.matchBefore(/^%abc-.*/);
+      if (match) return { from: match.from, options: [{ label: '%abc-2.2' }] };
+    }
+    match = context.matchBefore(/^%%\S*/);
+    if (match) return { from: match.from, options: pseudo };
   }
-  match = context.matchBefore(/^%%\S*/);
-  if (match) return { from: match.from, options: pseudo };
   return null;
 }]});
 
 const tooltip = hoverTooltip((view, pos, side) => {
-  const data = view.state.field(parser).tokens;
   const line = view.state.doc.lineAt(pos);
   const ln = view.state.field(parser).tokens[line.number - 1];
   if (!ln || !ln.length) return null;
@@ -110,7 +117,8 @@ const tooltip = hoverTooltip((view, pos, side) => {
     end: line.to,
     above: true,
     create(view) {
-      let dom = document.createElement("div")
+      var dom = document.createElement("div");
+      dom.className = "cm-ttip";
       dom.textContent = txt;
       return {dom}
     }
