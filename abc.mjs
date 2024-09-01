@@ -44,7 +44,7 @@ const watcher = EditorView.updateListener.of((update) => {
 });
 
 const parser = StateField.define({
-  create() {},
+  create() { return new ABC.Parser(''); },
   update(val, tr) {
     if (!tr.docChanged) return val;
     return new ABC.Parser(tr.state.doc.toString());
@@ -130,6 +130,44 @@ let editor = new EditorView({
   parent: document.body
 })
 
+const defHeader = '%abc';
+const defTune = '\n\nX:1\nT:untitled\nL:1/4\nK:C\n';
+
 widget._receive = function(msg) {
   if (!msg.isNoteOn()) return;
+  var last = -1;
+  var tune = false;
+  var txt;
+  for (var a of editor.state.field(parser).tokens) {
+    if (a.length) {
+      last = a[0].l;
+      if (a[0].t == 'X:') { tune = true; break; }
+    }
+  }
+  if (last == -1) {
+    txt = defHeader + defTune + m2n(msg.getNote());
+    editor.dispatch(editor.state.update({changes: {
+      from: 0, to: editor.state.doc.length, insert: txt}, selection: {anchor: txt.length}
+    }));
+  }
+  else if (!tune) {
+    txt = defTune + m2n(msg.getNote());
+    last = editor.state.doc.line(last + 1).to;
+    editor.dispatch(editor.state.update({changes: {
+      from: last, to: editor.state.doc.length, insert: txt}, selection: {anchor: last + txt.length}
+    }));
+  }
 };
+
+function m2n(m, k) {
+  var n = m % 12;
+  var t = (m - n) / 12;
+  var i, s;
+  if (!k) {
+    s = ['C', '^C', 'D', '_E', 'E', 'F', '^F', 'G', '_A', 'A', '_B', 'B'][n];
+  }
+  if (t > 5) s = s.toLowerCase();
+  for (i = t; i < 5; i++) s += ',';
+  for (i = 6; i < t; i++) s += "'";
+  return s;
+}
