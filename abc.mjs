@@ -77,16 +77,19 @@ const decorator = StateField.define({
   provide: (x) => EditorView.decorations.from(x)
 });
 
-const pseudo = [];
-for (var x of ABC.Parser.pseudo()) {
-  var opt = { label: '%%' + x.name, apply: '%%' + x.name + ' ' };
-  if (x.det) opt.detail = '(' + x.det + ')';
-  pseudo.push(opt);
-}
-
 const details = { '%:': 'ABC file header' };
 const fields = ABC.Parser.fields();
 for (var x of fields) if (x.det) details[x.name + ':'] = x.det;
+
+const pseudo = [];
+for (var x of ABC.Parser.pseudo()) {
+  var opt = { label: '%%' + x.name, apply: '%%' + x.name + ' ' };
+  if (x.det) {
+    opt.detail = '(' + x.det + ')';
+    details['%%' + x.name] = x.det;
+  }
+  pseudo.push(opt);
+}
 
 const autocomplete = autocompletion({ filterStrict: true, override: [(context) => {
   var match;
@@ -109,8 +112,8 @@ const tooltip = hoverTooltip((view, pos, side) => {
   const line = view.state.doc.lineAt(pos);
   const ln = view.state.field(parser).tokens[line.number - 1];
   if (!ln || !ln.length) return null;
-  var t = ln[0].t;
-  var txt = details[t];
+  var h = ln[0].h;
+  var txt = details[h];
   if (!txt) return null;
   return {
     pos: line.from,
@@ -145,29 +148,16 @@ widget._receive = function(msg) {
     }
   }
   if (last == -1) {
-    txt = defHeader + defTune + m2n(msg.getNote());
+    txt = defHeader + defTune + ABC.Parser.m2n(msg.getNote());
     editor.dispatch(editor.state.update({changes: {
       from: 0, to: editor.state.doc.length, insert: txt}, selection: {anchor: txt.length}
     }));
   }
   else if (!tune) {
-    txt = defTune + m2n(msg.getNote());
+    txt = defTune + ABC.Parser.m2n(msg.getNote());
     last = editor.state.doc.line(last + 1).to;
     editor.dispatch(editor.state.update({changes: {
       from: last, to: editor.state.doc.length, insert: txt}, selection: {anchor: last + txt.length}
     }));
   }
 };
-
-function m2n(m, k) {
-  var n = m % 12;
-  var t = (m - n) / 12;
-  var i, s;
-  if (!k) {
-    s = ['C', '^C', 'D', '_E', 'E', 'F', '^F', 'G', '_A', 'A', '_B', 'B'][n];
-  }
-  if (t > 5) s = s.toLowerCase();
-  for (i = t; i < 5; i++) s += ',';
-  for (i = 6; i < t; i++) s += "'";
-  return s;
-}
