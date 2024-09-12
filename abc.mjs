@@ -130,7 +130,7 @@ const tooltip = hoverTooltip((view, pos, side) => {
 
 let editor = new EditorView({
   extensions: [basicSetup, theme, parser, decorator, watcher, autocomplete, tooltip],
-  parent: document.body
+  parent: document.getElementById('editor')
 })
 
 const defHeader = '%abc';
