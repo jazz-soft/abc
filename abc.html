@@ -18,7 +18,15 @@
 <select id=select_midi_out></select>
 </p>
 <p id="piano"></p>
+<p><input id="file" type="file" onchange="load();"></p>
 <p id="editor"></p>
 <script src="bundle.js"></script>
+<script>
+function load() {
+  var reader = new FileReader();
+  reader.onload = function(e) { setText(e.target.result); };
+  reader.readAsText(document.getElementById('file').files[0]);
+}
+</script>
 </body>
 </html>

@@ -1,0 +1,15 @@
+X:
+K:C                 % OK
+K:                  % expected: Key
+K: none             % OK
+K:HP                % OK
+K:Hp ^g             % OK
+K: dummy            % expected: Key
+K: Cmin             % OK
+K: C m              % OK
+K: Db min           % too many flats
+K: C#lydian         % too many sharps
+K:
++: none
++: _b
++:_e                % OK

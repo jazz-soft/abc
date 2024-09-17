@@ -29,13 +29,15 @@ const theme = EditorView.baseTheme({
   ".cm-field": { color: "blue", fontWeight: "bold" },
   ".cm-pseudo": { color: "darkturquoise", fontWeight: "bold" },
   ".cm-comment": { color: "green", fontStyle: "italic" },
-  ".cm-free": { color: "gray" }
+  ".cm-free": { color: "gray" },
+  ".cm-err": { textDecoration: "underline wavy red", textUnderlineOffset: ".21em" }
 });
 
 const fieldMark = Decoration.mark({class: "cm-field"});
 const pseudoMark = Decoration.mark({class: "cm-pseudo"});
 const commentMark = Decoration.mark({class: "cm-comment"});
 const freeMark = Decoration.mark({class: "cm-free"});
+const errMark = Decoration.mark({class: "cm-err"});
 
 const watcher = EditorView.updateListener.of((update) => {
   if (update.docChanged) {
@@ -52,17 +54,19 @@ const parser = StateField.define({
 });
 
 function decorate(a, d, t) {
-  if (t.t == undefined) return;
-  var mark;
-  if (t.t[1] == ':') mark = fieldMark;
-  else if (t.t == '%') mark = commentMark;
-  else if (t.t == '%%') mark = pseudoMark;
-  else if (t.t == '??') mark = freeMark;
-  if (mark) {
-    var from = d.line(t.l + 1).from + t.c;
-    var to = from + t.x.length;
-    a.push(mark.range(from, to));
+  var mark, from, to;
+  if (t.t) {
+    if (t.t[1] == ':') mark = fieldMark;
+    else if (t.t == '%') mark = commentMark;
+    else if (t.t == '%%') mark = pseudoMark;
+    else if (t.t == '??') mark = freeMark;
   }
+  if (mark || t.e) {
+    from = d.line(t.l + 1).from + t.c;
+    to = from + t.x.length;
+  }
+  if (mark) a.push(mark.range(from, to));
+  if (t.e) a.push(errMark.range(from, to));
 }
 
 const decorator = StateField.define({
@@ -134,7 +138,7 @@ let editor = new EditorView({
 })
 
 const defHeader = '%abc';
-const defTune = '\n\nX:1\nT:untitled\nL:1/4\nK:C\n';
+const defTune = '\n\nX:1\nT:untitled\nM:4/4\nL:1/8\nK:C\n';
 
 widget._receive = function(msg) {
   if (!msg.isNoteOn()) return;
@@ -161,3 +165,9 @@ widget._receive = function(msg) {
     }));
   }
 };
+
+window.setText = function(txt) {
+  editor.dispatch(editor.state.update({changes: {
+    from: 0, to: editor.state.doc.length, insert: txt}, selection: {anchor: 0}
+  }));
+}
