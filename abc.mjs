@@ -25,7 +25,8 @@ midi_in.select();
 midi_out.select();
 
 const theme = EditorView.baseTheme({
-  ".cm-ttip": { fontFamily: "sans-serif", fontSize: "x-small", padding: ".2em" },
+  ".cm-ttip": { fontFamily: "sans-serif", fontSize: "x-small", padding: ".2em", color: "blue" },
+  ".cm-ttip-err": { fontFamily: "sans-serif", fontSize: "x-small", padding: ".2em", color: "red" },
   ".cm-field": { color: "blue", fontWeight: "bold" },
   ".cm-pseudo": { color: "darkturquoise", fontWeight: "bold" },
   ".cm-comment": { color: "green", fontStyle: "italic" },
@@ -113,20 +114,33 @@ const autocomplete = autocompletion({ filterStrict: true, override: [(context) =
 }]});
 
 const tooltip = hoverTooltip((view, pos, side) => {
+  var i, n, t, s, from, to;
   const line = view.state.doc.lineAt(pos);
   const ln = view.state.field(parser).tokens[line.number - 1];
   if (!ln || !ln.length) return null;
-  var h = ln[0].h;
-  var txt = details[h];
-  if (!txt) return null;
+  n = line.from;
+  for (i = 0; i < ln.length; i++) {
+    t = ln[i];
+    if (pos >= n + t.c && pos < n + t.c + t.x.length) break; 
+  }
+  if (t.t == '%') return null;
+  if (t.e) s = t.e;
+  else for (i = n; i >= 0; i--) {
+    t = ln[i];
+    if (t && t.h) {
+      s = details[t.h];
+      break;
+    } 
+  }
+  if (!s) return null;
   return {
-    pos: line.from,
-    end: line.to,
+    pos: line.from + t.c,
+    end: line.from + t.c + t.x.length,
     above: true,
     create(view) {
       var dom = document.createElement("div");
-      dom.className = "cm-ttip";
-      dom.textContent = txt;
+      dom.className = t.e ? "cm-ttip-err" : "cm-ttip";
+      dom.textContent = s;
       return {dom}
     }
   }
