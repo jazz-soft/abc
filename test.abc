@@ -1,15 +1,25 @@
 X:
+% U: ...
+U:                  % expected: definition
+U: ~                % incomplete definition
+U: ~ =              % incomplete definition
+U: ~=!tr!           % OK
+U: W=!tr!           % OK
+U: A=!tr!           % unexpected token
+U: W                % +                
++:= !tr!            % OK
+% K: ...
 K:C                 % OK
-K:                  % expected: Key
+K:                  % expected: key
 K: none             % OK
 K:HP                % OK
 K:Hp ^g             % OK
-K: dummy            % expected: Key
+K: dummy            % expected: key
 K: Cmin             % OK
 K: C m              % OK
 K: Db min           % too many flats
 K: C#lydian         % too many sharps
-K:
-+: none
-+: _b
+K:                  % +
++: none             % +
++: _b               % +
 +:_e                % OK

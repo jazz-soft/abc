@@ -54,6 +54,7 @@ const parser = StateField.define({
   }
 });
 
+function len(t) { return t.x.length; }
 function decorate(a, d, t) {
   var mark, from, to;
   if (t.t) {
@@ -64,7 +65,7 @@ function decorate(a, d, t) {
   }
   if (mark || t.e) {
     from = d.line(t.l + 1).from + t.c;
-    to = from + t.x.length;
+    to = from + len(t);
   }
   if (mark) a.push(mark.range(from, to));
   if (t.e) a.push(errMark.range(from, to));
@@ -114,32 +115,63 @@ const autocomplete = autocompletion({ filterStrict: true, override: [(context) =
 }]});
 
 const tooltip = hoverTooltip((view, pos, side) => {
-  var i, n, t, s, from, to;
+  var i, k, n, t, t0, t1, s, from, to;
   const line = view.state.doc.lineAt(pos);
   const ln = view.state.field(parser).tokens[line.number - 1];
   if (!ln || !ln.length) return null;
   n = line.from;
   for (i = 0; i < ln.length; i++) {
     t = ln[i];
-    if (pos >= n + t.c && pos < n + t.c + t.x.length) break; 
-  }
-  if (t.t == '%') return null;
-  if (t.e) s = t.e;
-  else for (i = n; i >= 0; i--) {
-    t = ln[i];
-    if (t && t.h) {
-      s = details[t.h];
+    if (pos >= n + t.c) {
+      k = i;
+      t0 = t;
+    }
+    if (pos < n + t.c + len(t)) {
+      t1 = t;
       break;
     } 
   }
+  if (!t1 || t1.t == '%') return null;
+  if (t0.e && t0.e == t1.e) {
+    s = t0.e;
+    from = line.from + t0.c;
+    to = line.from + t1.c + len(t1);
+    for (i = k - 1; i >= 0; i--) {
+      t = ln[i];
+      if (t.e == s) from = line.from + t.c;
+      else break;
+    }
+    for (i = k + 1; i < ln.length; i++) {
+      t = ln[i];
+      if (t.e == s) to = line.from + t.c + len(t);
+      else break;
+    }
+  }
+  else {
+    for (i = k; i >= 0; i--) {
+      t = ln[i];
+      if (t.e) break;
+      if (t.h) s = details[t.h];
+      if (s) {
+        from = line.from + t.c;
+        to = line.from + t.c + len(t);
+        break;
+      } 
+    }
+    if (s) for (i = k; i < ln.length; i++) {
+      t = ln[i];
+      if (t.t == '%' || t.e) break;
+      to = line.from + t.c + len(t);
+    }
+  }
   if (!s) return null;
   return {
-    pos: line.from + t.c,
-    end: line.from + t.c + t.x.length,
+    pos: from,
+    end: to,
     above: true,
     create(view) {
       var dom = document.createElement("div");
-      dom.className = t.e ? "cm-ttip-err" : "cm-ttip";
+      dom.className = t0.e ? "cm-ttip-err" : "cm-ttip";
       dom.textContent = s;
       return {dom}
     }
