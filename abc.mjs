@@ -55,29 +55,36 @@ const parser = StateField.define({
 });
 
 function len(t) { return t.x.length; }
-function decorate(a, d, t) {
-  var mark, from, to;
-  if (t.t) {
-    if (t.t[1] == ':') mark = fieldMark;
-    else if (t.t == '%') mark = commentMark;
-    else if (t.t == '%%') mark = pseudoMark;
-    else if (t.t == '??') mark = freeMark;
-  }
-  if (mark || t.e) {
-    from = d.line(t.l + 1).from + t.c;
-    to = from + len(t);
-  }
-  if (mark) a.push(mark.range(from, to));
-  if (t.e) a.push(errMark.range(from, to));
-}
-
 const decorator = StateField.define({
   create() { return Decoration.set([]); },
   update(val, tr) {
+    var i, j, k, n, s, t, ln, mark, from, to;
     if (!tr.docChanged) return val;
     const data = tr.state.field(parser).tokens;
     const dec = [];
-    for (var line of data) for (var token of line) decorate(dec, tr.state.doc, token);
+    for (k = 0; k < data.length; k++) {
+      ln = data[k];
+      n = tr.state.doc.line(k + 1).from;
+      j = 0;
+      for (i = 0; i < ln.length; i++) {
+        t = ln[i];
+        from = n + t.c;
+        to = from + len(t);
+        if (t.t) {
+          mark = t.t[1] == ':' ? fieldMark : {'%': commentMark, '%%': pseudoMark, '??': freeMark}[t.t];
+          if (mark) dec.push(mark.range(from, to));
+        }
+        if (t.e && i >= j) {
+          s = t.e;
+          for (j = i + 1; j < ln.length; j++) {
+            t = ln[j];
+            if (t.e != s) break;
+            to = n + t.c + len(t);
+          }
+          dec.push(errMark.range(from, to));
+        }
+      }
+    }
     return Decoration.set(dec);
   },
   provide: (x) => EditorView.decorations.from(x)
