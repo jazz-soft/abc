@@ -2,6 +2,10 @@
 <html>
 <head>
 <title>abc</title>
+<script src="node_modules/jzz/javascript/JZZ.js"></script>
+<script src="node_modules/jzz-gui-select/javascript/JZZ.gui.Select.js"></script>
+<script src="node_modules/jzz-input-kbd/javascript/JZZ.input.Kbd.js"></script>
+<script src="node_modules/jzz-synth-tiny/javascript/JZZ.synth.Tiny.js"></script>
 <style>
 #editor {height:24em;border-style:solid;border-width: 1px;border-color:silver;}
 .cm-editor { height: 100% }
@@ -22,9 +26,21 @@
 <p id="editor"></p>
 <script src="bundle.js"></script>
 <script>
+JZZ.synth.Tiny.register('Web Audio');
+var midi_in = JZZ.gui.SelectMidiIn({ at: 'select_midi_in' });
+var midi_out = JZZ.gui.SelectMidiOut({ at: 'select_midi_out' });
+var piano = JZZ.input.Kbd({ at: 'piano' });
+var editor = new AbcEditor('editor');
+midi_in.connect(piano);
+piano.connect(midi_out);
+piano.connect(editor);
+editor.connect(piano);
+midi_in.select();
+midi_out.select();
+
 function load() {
   var reader = new FileReader();
-  reader.onload = function(e) { setText(e.target.result); };
+  reader.onload = function(e) { editor.setText(e.target.result); };
   reader.readAsText(document.getElementById('file').files[0]);
 }
 </script>

@@ -2,27 +2,7 @@ import {EditorView, basicSetup} from "codemirror";
 import {Decoration, hoverTooltip} from "@codemirror/view";
 import {StateField, StateEffect} from "@codemirror/state";
 import {autocompletion} from "@codemirror/autocomplete";
-import JZZ from "jzz";
 import ABC from "jazz-abc";
-import SEL from "jzz-gui-select";
-import KBD from "jzz-input-kbd";
-import TINY from "jzz-synth-tiny";
-SEL(JZZ);
-KBD(JZZ);
-TINY(JZZ);
-
-JZZ.synth.Tiny.register('Web Audio');
-var midi_in = JZZ.gui.SelectMidiIn({ at: 'select_midi_in' });
-var midi_out = JZZ.gui.SelectMidiOut({ at: 'select_midi_out' });
-var piano = JZZ.input.Kbd({ at: "piano" });
-var widget = JZZ.Widget();
-
-midi_in.connect(piano);
-piano.connect(midi_out);
-piano.connect(widget);
-widget.connect(piano);
-midi_in.select();
-midi_out.select();
 
 const theme = EditorView.baseTheme({
   ".cm-ttip": { fontFamily: "sans-serif", fontSize: "x-small", padding: ".2em", color: "blue" },
@@ -185,42 +165,46 @@ const tooltip = hoverTooltip((view, pos, side) => {
   }
 })
 
-let editor = new EditorView({
-  extensions: [basicSetup, theme, parser, decorator, watcher, autocomplete, tooltip],
-  parent: document.getElementById('editor')
-})
-
 const defHeader = '%abc';
 const defTune = '\n\nX:1\nT:untitled\nM:4/4\nL:1/8\nK:C\n';
 
-widget._receive = function(msg) {
-  if (!msg.isNoteOn()) return;
-  var last = -1;
-  var tune = false;
-  var txt;
-  for (var a of editor.state.field(parser).tokens) {
-    if (a.length) {
-      last = a[0].l;
-      if (a[0].t == 'X:') { tune = true; break; }
+function AbcEditor(where) {
+  var self = JZZ.Widget();
+  self.editor = new EditorView({
+    extensions: [basicSetup, theme, parser, decorator, watcher, autocomplete, tooltip],
+    parent: document.getElementById(where)
+  });
+  self.setText = function(txt) {
+    this.editor.dispatch(this.editor.state.update({changes: {
+      from: 0, to: this.editor.state.doc.length, insert: txt}, selection: {anchor: 0}
+    }));
+  };
+  self._receive = function(msg) {
+    if (!msg.isNoteOn()) return;
+    var last = -1;
+    var tune = false;
+    var txt;
+    for (var a of this.editor.state.field(parser).tokens) {
+      if (a.length) {
+        last = a[0].l;
+        if (a[0].t == 'X:') { tune = true; break; }
+      }
     }
-  }
-  if (last == -1) {
-    txt = defHeader + defTune + ABC.Parser.m2n(msg.getNote());
-    editor.dispatch(editor.state.update({changes: {
-      from: 0, to: editor.state.doc.length, insert: txt}, selection: {anchor: txt.length}
-    }));
-  }
-  else if (!tune) {
-    txt = defTune + ABC.Parser.m2n(msg.getNote());
-    last = editor.state.doc.line(last + 1).to;
-    editor.dispatch(editor.state.update({changes: {
-      from: last, to: editor.state.doc.length, insert: txt}, selection: {anchor: last + txt.length}
-    }));
-  }
-};
-
-window.setText = function(txt) {
-  editor.dispatch(editor.state.update({changes: {
-    from: 0, to: editor.state.doc.length, insert: txt}, selection: {anchor: 0}
-  }));
+    if (last == -1) {
+      txt = defHeader + defTune + ABC.Parser.m2n(msg.getNote());
+      this.editor.dispatch(this.editor.state.update({changes: {
+        from: 0, to: this.editor.state.doc.length, insert: txt}, selection: {anchor: txt.length}
+      }));
+    }
+    else if (!tune) {
+      txt = defTune + ABC.Parser.m2n(msg.getNote());
+      last = this.editor.state.doc.line(last + 1).to;
+      this.editor.dispatch(this.editor.state.update({changes: {
+        from: last, to: this.editor.state.doc.length, insert: txt}, selection: {anchor: last + txt.length}
+      }));
+    }
+  };
+  return self;
 }
+
+window.AbcEditor = AbcEditor;
