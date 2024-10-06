@@ -3,11 +3,12 @@ X:
 U:                  % expected: definition
 U: ~                % incomplete definition
 U: ~ =              % incomplete definition
-U: ~=!tr!           % OK
-U: W=!tr!           % OK
-U: A=!tr!           % unexpected token
+U: ~=!tr!           % unknown symbol
+U: W=!none!         % OK
+U: A=!none!         % unexpected token
 U: W                % +                
-+:= !tr!            % OK
++:= !sfz!           % OK
+U:h = "^text"       % OK
 % K: ...
 K:C                 % OK
 K:                  % expected: key
