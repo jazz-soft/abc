@@ -11,6 +11,7 @@ const theme = EditorView.baseTheme({
   ".cm-pseudo": { color: "darkturquoise", fontWeight: "bold" },
   ".cm-symbol": { color: "magenta" },
   ".cm-quoted": { color: "limegreen" },
+  ".cm-enum": { color: "blue" },
   ".cm-comment": { color: "green", fontStyle: "italic" },
   ".cm-free": { color: "darkgray" },
   ".cm-err": { textDecoration: "underline wavy red", textUnderlineOffset: ".21em" }
@@ -20,6 +21,7 @@ const fieldMark = Decoration.mark({class: "cm-field"});
 const pseudoMark = Decoration.mark({class: "cm-pseudo"});
 const symbolMark = Decoration.mark({class: "cm-symbol"});
 const quotedMark = Decoration.mark({class: "cm-quoted"});
+const enumMark = Decoration.mark({class: "cm-enum"});
 const commentMark = Decoration.mark({class: "cm-comment"});
 const freeMark = Decoration.mark({class: "cm-free"});
 const errMark = Decoration.mark({class: "cm-err"});
@@ -55,7 +57,10 @@ const decorator = StateField.define({
         from = n + t.c;
         to = from + len(t);
         if (t.t) {
-          mark = t.t[1] == ':' ? fieldMark : {'%': commentMark, '%%': pseudoMark, '!!': symbolMark, '""': quotedMark, '??': freeMark}[t.t];
+          mark = t.t[1] == ':' ? fieldMark : {
+            '%': commentMark, '%%': pseudoMark, '!!': symbolMark, '""': quotedMark,
+            '$$': enumMark, 'Kt': enumMark, 'Km': enumMark, '??': freeMark
+          }[t.t];
           if (mark) dec.push(mark.range(from, to));
         }
         if (t.e && i >= j) {
@@ -140,6 +145,11 @@ const tooltip = hoverTooltip((view, pos, side) => {
   }
   else if (t0 == t1 && t1.t == '!!') {
     s = ABC.Parser.symbolDet(t1.x);
+    from = line.from + t1.c;
+    to = line.from + t1.c + len(t1);
+  }
+  else if (t0 == t1 && t1.t == '%%') {
+    s = ABC.Parser.pseudoDet(t1.x);
     from = line.from + t1.c;
     to = line.from + t1.c + len(t1);
   }
