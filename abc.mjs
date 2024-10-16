@@ -198,7 +198,9 @@ function AbcEditor(where) {
       from: 0, to: this.editor.state.doc.length, insert: txt}, selection: {anchor: 0}
     }));
   };
+  self.focus = function() { self.editor.focus(); };
   self._receive = function(msg) {
+    self.focus();
     if (!msg.isNoteOn()) return;
     var last = -1;
     var tune = false;

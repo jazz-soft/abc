@@ -37,10 +37,11 @@ piano.connect(editor);
 editor.connect(piano);
 midi_in.select();
 midi_out.select();
+editor.focus();
 
 function load() {
   var reader = new FileReader();
-  reader.onload = function(e) { editor.setText(e.target.result); };
+  reader.onload = function(e) { editor.setText(e.target.result); editor.focus(); };
   reader.readAsText(document.getElementById('file').files[0]);
 }
 </script>
