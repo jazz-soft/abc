@@ -203,7 +203,8 @@ function AbcEditor(where) {
     var last = -1;
     var tune = false;
     var txt;
-    for (var a of this.editor.state.field(parser).tokens) {
+    var data = this.editor.state.field(parser).tokens;
+    for (var a of data) {
       if (a.length) {
         last = a[0].l;
         if (a[0].t == 'X:') { tune = true; break; }
@@ -211,15 +212,41 @@ function AbcEditor(where) {
     }
     if (last == -1) {
       txt = defHeader + defTune + ABC.Parser.m2n(msg.getNote());
-      this.editor.dispatch(this.editor.state.update({changes: {
-        from: 0, to: this.editor.state.doc.length, insert: txt}, selection: {anchor: txt.length}
+      this.editor.dispatch(this.editor.state.update({
+        changes: { from: 0, to: this.editor.state.doc.length, insert: txt },
+        selection: { anchor: txt.length }
       }));
     }
     else if (!tune) {
       txt = defTune + ABC.Parser.m2n(msg.getNote());
       last = this.editor.state.doc.line(last + 1).to;
-      this.editor.dispatch(this.editor.state.update({changes: {
-        from: last, to: this.editor.state.doc.length, insert: txt}, selection: {anchor: last + txt.length}
+      this.editor.dispatch(this.editor.state.update({
+        changes: { from: last, to: this.editor.state.doc.length, insert: txt },
+        selection: { anchor: last + txt.length }
+      }));
+    }
+    else {
+      var sel = this.editor.state.selection.ranges[0];
+      var line = this.editor.state.doc.lineAt(sel.from);
+      if (line.number != this.editor.state.doc.lineAt(sel.to).number) return;
+      var ln = data[line.number - 1];
+      if (!ln || !ln.length || ln[0].t != '!?') return;
+      var from = sel.from - line.from;
+      var to = sel.to - line.from;
+      var key, x0, x1;
+      for (var x of ln) {
+        if (x.c <= from && x.t == '!?') key = ABC.Parser.getKey(x);
+        if (x.c < from && x.c + len(x) > from) x0 = x;
+        if (x.c < to && x.c + len(x) > to) x1 = x;
+      }
+      if (x0) from = x0.c;
+      if (x1) to = x1.c + len(x1);
+      txt = ABC.Parser.m2n(msg.getNote(), key);
+      from += line.from;
+      to += line.from;
+      this.editor.dispatch(this.editor.state.update({
+        changes: { from: from, to: to, insert: txt },
+        selection: { anchor: from + txt.length }
       }));
     }
   };
